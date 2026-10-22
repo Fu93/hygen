@@ -30,7 +30,7 @@ export interface ResolverIO {
     load: (arg0: string) => Promise<Record<string, any>>;
     none: (arg0: string) => Record<string, any>;
 }
-export declare type ActionResult = any;
+export type ActionResult = any;
 export interface RunnerResult {
     success: boolean;
     time: number;
@@ -40,7 +40,7 @@ export interface RunnerResult {
         availableActions: string[];
     };
 }
-export declare type ParamsResult = {
+export type ParamsResult = {
     templates: string;
     generator: string;
     action: string;
