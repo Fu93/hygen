@@ -292,6 +292,18 @@ Here are the available properties for an `inject: true` template:
 In almost all cases you want to ensure you're not injecting content twice:
 
 * `skip_if` which contains a regular expression / text. If exists, injection is skipped.
+* `inline`, when true, appends the body onto the matched line instead of inserting a new line. A file containing `dependencies = A,B` and a body of `,C` becomes `dependencies = A,B,C`.
+
+```yaml
+---
+to: config.ini
+inject: true
+after: dependencies = A,B
+inline: true
+skip_if: ",C"
+---
+,C
+```
 
 Let's see how these play out in the [Redux](/docs/redux) use case.
 
@@ -363,4 +375,5 @@ Next up, we'll move on to [generators](/docs/generators).
 | [`at_line:`](#injection)           | Number       | undefined | 123                                    |
 | [`eof_last:`](#injection)          | Boolean      | undefined | true                                   |
 | [`skip_if:`](#injection)           | Regex        | undefined | myPackage                              |
+| [`inline:`](#injection)            | Boolean      | undefined | true                                   |
 | [`sh:`](#shell)                    | String       | undefined | echo: "Hello this is a shell command!" |

@@ -297,6 +297,18 @@ You can guard against double injection:
 Also you can insert or remove empty line to injection body. That feature very useful if your editor or formatter automatically insert blank line at the end of file on save:
 
 * `eof_last` - if falsy - trim blank line from the end of injection body, if truthy - insert it.
+* `inline` - when true, append the body onto the matched line instead of inserting a new line. `dependencies = A,B` with body `,C` becomes `dependencies = A,B,C`.
+
+```yaml
+---
+to: config.ini
+inject: true
+after: dependencies = A,B
+inline: true
+skip_if: ",C"
+---
+,C
+```
 
 ### Generator messages
 
