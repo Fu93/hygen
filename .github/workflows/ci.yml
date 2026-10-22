@@ -18,10 +18,10 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        # Node 20 and 22 both pass the suite. Windows is omitted: yarn test:win32
-        # has not been verified, and the win32 job below stays gated on windows-latest.
+        # Node 20 and 22 both pass the suite on ubuntu-latest.
+        # windows-latest runs the existing yarn test:win32 step (gated below).
         node-version: [20.x, 22.x]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
     steps:
     - name: Set git to use LF
       run: |
