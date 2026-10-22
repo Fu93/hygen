@@ -298,6 +298,16 @@ Also you can insert or remove empty line to injection body. That feature very us
 
 * `eof_last` - if falsy - trim blank line from the end of injection body, if truthy - insert it.
 
+### Generator messages
+
+A template can print a status line with the `message` frontmatter field. The text is a [chalk template](https://github.com/chalk/chalk#tagged-template-literal) (`{green ...}`, `{bold ...}`), not a leftover `{green` tag:
+
+```yaml
+---
+message: "{green created} <%= name %>"
+---
+```
+
 ### Build Your Own
 
 `hygen` is highly embeddable. You should be able to use it by simply listing it
