@@ -34,6 +34,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShowHelpError = void 0;
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const params_1 = __importDefault(require("./params"));
+const help_1 = require("./help");
 class ShowHelpError extends Error {
     constructor(message) {
         super(message);
@@ -43,6 +44,10 @@ class ShowHelpError extends Error {
 exports.ShowHelpError = ShowHelpError;
 const engine = (argv, config) => __awaiter(void 0, void 0, void 0, function* () {
     const { cwd, templates, logger } = config;
+    if (['-v', '--version'].includes(argv[0])) {
+        logger.log(`Hygen v${help_1.VERSION}`);
+        process.exit(0);
+    }
     const args = Object.assign(yield (0, params_1.default)(config, argv), { cwd });
     const { generator, action, actionfolder } = args;
     if (['-h', '--help'].includes(argv[0])) {
@@ -52,6 +57,7 @@ Usage:
 
 Options:
   -h, --help # Show this message and quit
+  -v, --version # Print the version and quit
   --dry      # Perform a dry run.  Files will be generated but not saved.`);
         process.exit(0);
     }

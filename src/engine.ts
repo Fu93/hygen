@@ -1,6 +1,7 @@
 import fs from 'fs-extra'
 import type { ActionResult, RunnerConfig } from './types'
 import params from './params'
+import { VERSION } from './help'
 
 class ShowHelpError extends Error {
   constructor(message: string) {
@@ -14,6 +15,12 @@ const engine = async (
   config: RunnerConfig,
 ): Promise<ActionResult[]> => {
   const { cwd, templates, logger } = config
+
+  if (['-v', '--version'].includes(argv[0])) {
+    logger.log(`Hygen v${VERSION}`)
+    process.exit(0)
+  }
+
   const args = Object.assign(await params(config, argv), { cwd })
   const { generator, action, actionfolder } = args
 
@@ -24,6 +31,7 @@ Usage:
 
 Options:
   -h, --help # Show this message and quit
+  -v, --version # Print the version and quit
   --dry      # Perform a dry run.  Files will be generated but not saved.`)
     process.exit(0)
   }
