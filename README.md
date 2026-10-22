@@ -310,6 +310,18 @@ skip_if: ",C"
 ,C
 ```
 
+### One template, many files
+
+`each: <item> in <collection>` repeats a template once for every entry in an array (from the CLI, as JSON, or from a prompt). One run over `['john', 'house', 'car']` writes `app/john/handler.js`, `app/house/handler.js`, and `app/car/handler.js` without copying the template:
+
+```yaml
+---
+to: app/<%= name %>/handler.js
+each: name in names
+---
+module.exports = '<%= name %>'
+```
+
 ### Generator messages
 
 A template can print a status line with the `message` frontmatter field. The text is a [chalk template](https://github.com/chalk/chalk#tagged-template-literal) (`{green ...}`, `{bold ...}`), not a leftover `{green` tag:
