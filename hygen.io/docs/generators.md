@@ -262,7 +262,7 @@ message: |
 
 The special `|` annotation is a YAML literal block. Should you need it, [here's a quick YAML refresher](https://learnxinyminutes.com/docs/yaml/).
 
-Note that in `message` you can have a special coloring syntax, which can spice up your self-documenting generators.
+Note that in `message` you can have a special coloring syntax, which can spice up your self-documenting generators. These tags are chalk template literals (`{green created}`), applied by `chalk/source/templates`. They are not printed as raw text.
 
 Here's a few examples:
 

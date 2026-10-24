@@ -41,6 +41,36 @@ const indexByLocation = (attributes: any, lines: string[]): number => {
   }
   return -1
 }
+// The line a before/after pattern actually matched, rather than the
+// neighboring line where a new-line inject would be inserted.
+const matchedLineIndex = (attributes: any, lines: string[]): number => {
+  const pair = Object.entries(attributes).find(([k, _]) => locations[k])
+  if (!pair) {
+    return -1
+  }
+  const [k, v] = pair
+  if (k === 'at_line') {
+    return Number(v)
+  }
+  if (k === 'prepend') {
+    return 0
+  }
+  if (k === 'append') {
+    const last = lines.length - 1
+    return last > 0 && lines[last] === '' ? last - 1 : last
+  }
+  const pattern = String(v)
+  const oneLineMatchIndex = lines.findIndex((l) => l.match(pattern))
+  if (oneLineMatchIndex >= 0) {
+    return oneLineMatchIndex
+  }
+  const fullText = lines.join('\n')
+  const fullMatch = fullText.match(new RegExp(pattern, 'm'))
+  if (fullMatch && typeof fullMatch.index === 'number') {
+    return fullText.substring(0, fullMatch.index).split(EOLRegex).length - 1
+  }
+  return -1
+}
 const injector = (action: RenderedAction, content: string): string => {
   const {
     attributes: { skip_if, eof_last },
@@ -58,6 +88,16 @@ const injector = (action: RenderedAction, content: string): string => {
     //
     const NL = newline(content)
     const lines = content.split(NL)
+
+    // inline appends the body onto the matched line (issue #96):
+    // `dependencies = A,B` + `,C` => `dependencies = A,B,C`
+    if (attributes.inline) {
+      const lineIdx = matchedLineIndex(attributes, lines)
+      if (lineIdx >= 0 && lineIdx < lines.length) {
+        lines[lineIdx] = `${lines[lineIdx]}${body.replace(/\r?\n$/, '')}`
+      }
+      return lines.join(NL)
+    }
 
     // returns -1 (end) if no attrs
     const idx = indexByLocation(attributes, lines)

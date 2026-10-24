@@ -28,6 +28,67 @@ const ignores = [
 const renderTemplate = (tmpl, locals, config) =>
   typeof tmpl === 'string' ? ejs.render(tmpl, context(locals, config)) : tmpl
 
+const EACH_PATTERN = /^\s*([A-Za-z_][\w]*)\s+in\s+([A-Za-z_][\w]*)\s*$/
+
+const arrayFrom = (value) => {
+  if (Array.isArray(value)) {
+    return value
+  }
+  if (typeof value !== 'string') {
+    return null
+  }
+  const trimmed = value.trim()
+  if (!trimmed.startsWith('[')) {
+    return null
+  }
+  try {
+    const parsed = JSON.parse(trimmed)
+    return Array.isArray(parsed) ? parsed : null
+  } catch (err) {
+    return null
+  }
+}
+
+// `each: name in names` repeats the whole template once per array entry.
+// The issue does not name this syntax; it is the loop form added for #396.
+const iterationsFor = (eachValue, args) => {
+  if (eachValue == null || eachValue === false || eachValue === '') {
+    return [null]
+  }
+  const match = String(eachValue).match(EACH_PATTERN)
+  if (!match) {
+    throw new Error(
+      `each must look like "item in collection", got ${JSON.stringify(
+        eachValue,
+      )}`,
+    )
+  }
+  const [, itemName, collectionName] = match
+  const collection = arrayFrom(args[collectionName])
+  if (!collection) {
+    throw new Error(`each collection "${collectionName}" is not an array`)
+  }
+  return collection.map((item, index) => ({ [itemName]: item, index }))
+}
+
+const renderOne = (file, attributes, body, args, config) => {
+  const { each, ...templateAttributes } = attributes
+  const renderedAttrs = Object.entries(templateAttributes).reduce(
+    (obj, [key, value]) => {
+      return {
+        ...obj,
+        [key]: renderTemplate(value, args, config),
+      }
+    },
+    {},
+  )
+  return {
+    file,
+    attributes: renderedAttrs,
+    body: renderTemplate(body, { ...args, attributes: renderedAttrs }, config),
+  }
+}
+
 async function getFiles(dir) {
   const files = walk
     .sync({ path: dir, ignoreFiles: ['.hygenignore'] })
@@ -64,26 +125,18 @@ const render = async (
     )
     .then(
       map(({ file, attributes, body }) => {
-        const renderedAttrs = Object.entries(attributes).reduce(
-          (obj, [key, value]) => {
-            return {
-              ...obj,
-              [key]: renderTemplate(value, args, config),
-            }
-          },
-          {},
-        )
         debug('Rendering file: %o', file)
-        return {
-          file,
-          attributes: renderedAttrs,
-          body: renderTemplate(
+        return iterationsFor(attributes.each, args).map((extra) =>
+          renderOne(
+            file,
+            attributes,
             body,
-            { ...args, attributes: renderedAttrs },
+            extra ? { ...args, ...extra } : args,
             config,
           ),
-        }
+        )
       }),
     )
+    .then((groups) => groups.reduce((acc, group) => acc.concat(group), []))
 
 export default render

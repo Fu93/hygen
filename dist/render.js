@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -37,6 +48,54 @@ const ignores = [
     'Thumbs.db',
 ];
 const renderTemplate = (tmpl, locals, config) => typeof tmpl === 'string' ? ejs_1.default.render(tmpl, (0, context_1.default)(locals, config)) : tmpl;
+const EACH_PATTERN = /^\s*([A-Za-z_][\w]*)\s+in\s+([A-Za-z_][\w]*)\s*$/;
+const arrayFrom = (value) => {
+    if (Array.isArray(value)) {
+        return value;
+    }
+    if (typeof value !== 'string') {
+        return null;
+    }
+    const trimmed = value.trim();
+    if (!trimmed.startsWith('[')) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed : null;
+    }
+    catch (err) {
+        return null;
+    }
+};
+// `each: name in names` repeats the whole template once per array entry.
+// The issue does not name this syntax; it is the loop form added for #396.
+const iterationsFor = (eachValue, args) => {
+    if (eachValue == null || eachValue === false || eachValue === '') {
+        return [null];
+    }
+    const match = String(eachValue).match(EACH_PATTERN);
+    if (!match) {
+        throw new Error(`each must look like "item in collection", got ${JSON.stringify(eachValue)}`);
+    }
+    const [, itemName, collectionName] = match;
+    const collection = arrayFrom(args[collectionName]);
+    if (!collection) {
+        throw new Error(`each collection "${collectionName}" is not an array`);
+    }
+    return collection.map((item, index) => ({ [itemName]: item, index }));
+};
+const renderOne = (file, attributes, body, args, config) => {
+    const { each } = attributes, templateAttributes = __rest(attributes, ["each"]);
+    const renderedAttrs = Object.entries(templateAttributes).reduce((obj, [key, value]) => {
+        return Object.assign(Object.assign({}, obj), { [key]: renderTemplate(value, args, config) });
+    }, {});
+    return {
+        file,
+        attributes: renderedAttrs,
+        body: renderTemplate(body, Object.assign(Object.assign({}, args), { attributes: renderedAttrs }), config),
+    };
+};
 function getFiles(dir) {
     return __awaiter(this, void 0, void 0, function* () {
         const files = ignore_walk_1.default
@@ -60,15 +119,9 @@ const render = (args, config) => __awaiter(void 0, void 0, void 0, function* () 
         return Object.assign({ file }, (0, front_matter_1.default)(text, { allowUnsafe: true }));
     }))
         .then(map(({ file, attributes, body }) => {
-        const renderedAttrs = Object.entries(attributes).reduce((obj, [key, value]) => {
-            return Object.assign(Object.assign({}, obj), { [key]: renderTemplate(value, args, config) });
-        }, {});
         debug('Rendering file: %o', file);
-        return {
-            file,
-            attributes: renderedAttrs,
-            body: renderTemplate(body, Object.assign(Object.assign({}, args), { attributes: renderedAttrs }), config),
-        };
-    }));
+        return iterationsFor(attributes.each, args).map((extra) => renderOne(file, attributes, body, extra ? Object.assign(Object.assign({}, args), extra) : args, config));
+    }))
+        .then((groups) => groups.reduce((acc, group) => acc.concat(group), []));
 });
 exports.default = render;

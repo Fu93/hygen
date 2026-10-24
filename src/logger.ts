@@ -1,7 +1,10 @@
 import chalk from 'chalk'
 
-// chalk 4.1.2 doesn't type template property
-const { yellow, red, green, magenta, template }: any = chalk
+// chalk 4.1.2 does not export `template`. The helper lives in
+// chalk/source/templates (https://github.com/jondot/hygen/issues/411).
+const { yellow, red, green, magenta } = chalk
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const template = require('chalk/source/templates')
 
 class Logger {
   log: (message?: any, ...optionalParams: any[]) => void

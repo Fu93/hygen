@@ -143,6 +143,21 @@ describe('injector', () => {
       ),
     ).toMatchSnapshot()
   })
+  it('inline appends onto the matched line instead of inserting a new line', () => {
+    const source = 'dependencies = A,B\n'
+    const result = injector(
+      {
+        attributes: {
+          after: 'dependencies = A,B',
+          inline: true,
+        },
+        body: ',C\n',
+      },
+      source,
+    )
+    expect(result).toBe('dependencies = A,B,C\n')
+    expect(result).not.toMatch(/,\nC|\n,C/)
+  })
   it('correctly interpret multi-line skip_if regex', () => {
     expect(
       injector(

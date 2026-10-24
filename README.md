@@ -297,6 +297,40 @@ You can guard against double injection:
 Also you can insert or remove empty line to injection body. That feature very useful if your editor or formatter automatically insert blank line at the end of file on save:
 
 * `eof_last` - if falsy - trim blank line from the end of injection body, if truthy - insert it.
+* `inline` - when true, append the body onto the matched line instead of inserting a new line. `dependencies = A,B` with body `,C` becomes `dependencies = A,B,C`.
+
+```yaml
+---
+to: config.ini
+inject: true
+after: dependencies = A,B
+inline: true
+skip_if: ",C"
+---
+,C
+```
+
+### One template, many files
+
+`each: <item> in <collection>` repeats a template once for every entry in an array (from the CLI, as JSON, or from a prompt). One run over `['john', 'house', 'car']` writes `app/john/handler.js`, `app/house/handler.js`, and `app/car/handler.js` without copying the template:
+
+```yaml
+---
+to: app/<%= name %>/handler.js
+each: name in names
+---
+module.exports = '<%= name %>'
+```
+
+### Generator messages
+
+A template can print a status line with the `message` frontmatter field. The text is a [chalk template](https://github.com/chalk/chalk#tagged-template-literal) (`{green ...}`, `{bold ...}`), not a leftover `{green` tag:
+
+```yaml
+---
+message: "{green created} <%= name %>"
+---
+```
 
 ### Build Your Own
 
